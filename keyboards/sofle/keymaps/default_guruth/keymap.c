@@ -8,19 +8,9 @@ enum sofle_layers {
     _ADJUST,
 };
 
-enum custom_keycodes {
-    KC_QWERTY = SAFE_RANGE,
-    KC_COLEMAK,
-    KC_LOWER,
-    KC_RAISE,
-    KC_ADJUST,
-    KC_PRVWD,
-    KC_NXTWD,
-    KC_LSTRT,
-    KC_LEND,
-    KC_DLINE
-};
 
+#define RAISE MO(_RAISE)
+#define LOWER MO(_LOWER)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
@@ -44,7 +34,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_TAB,   KC_Q,  KC_W,    KC_E,    KC_R,     KC_T,                          KC_Y,    KC_U,    KC_I,    KC_O,   KC_P,    KC_MINS,
   KC_LCTRL, KC_A,  KC_S,    KC_D,    KC_F,     KC_G,                          KC_H,    KC_J,    KC_K,    KC_L,   KC_SCLN, KC_QUOT,
   KC_LSFT,  KC_Z,  KC_X,    KC_C,    KC_V,     KC_B,   KC_MUTE,     XXXXXXX,  KC_N,    KC_M,    KC_COMM, KC_DOT, KC_SLSH, KC_RSFT,
-                   KC_LALT, KC_LGUI, KC_LOWER, KC_SPC, KC_LBRC,     KC_RBRC,  KC_ENT, KC_RAISE, KC_BSPC, KC_RGUI
+                   KC_LALT, KC_LGUI, LOWER,    KC_SPC, KC_LBRC,     KC_RBRC,  KC_ENT,     RAISE, KC_BSPC, KC_RGUI
 ),
 /* LOWER
  * ,-----------------------------------------.                    ,-----------------------------------------.
@@ -74,7 +64,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * |      |      |      |      |      | Caps |-------.    ,-------|      | Left | Down |  UP  | Right|      |
  * |------+------+------+------+------+------|  MUTE |   |        |------+------+------+------+------+------|
- * |      |      |      |      |      |      |-------|   |-------|       |      |      |      |      |      |
+ * |      |      |      |      |      |      |-------|   |-------|       |      |  =   |      |      |      |
  * `-----------------------------------------/      /     \      \-----------------------------------------'
  *            | LAlt | LGUI |LOWER |Space | /      /       \     \  |Enter |RAISE |BackSP | RGUI |
  *            `----------------------------------'           '-----------------------------------'
@@ -83,7 +73,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
    KC_F1 ,  KC_F2 ,  KC_F3 ,  KC_F4 , KC_F5  ,  KC_F6 ,                          KC_F7 ,  KC_F8 ,  KC_F9 ,  KC_F10, KC_F11 , KC_F12 ,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                         XXXXXXX, XXXXXXX,KC_PGDOWN,KC_PGUP, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,                         XXXXXXX, KC_LEFT, KC_DOWN, KC_UP  , KC_RGHT, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,       _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,       _______, XXXXXXX, XXXXXXX, KC_EQL, XXXXXXX, XXXXXXX, XXXXXXX,
                     _______, _______, _______, _______, XXXXXXX,       XXXXXXX, _______, _______, _______, _______
 ),
 /* ADJUST
@@ -100,13 +90,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *            `----------------------------------'           '------''---------------------------'
  */
   [_ADJUST] = LAYOUT(
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                         XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  CG_TOGG, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                         XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                         XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, KC_BRID, KC_BRIU, XXXXXXX, XXXXXXX,                         XXXXXXX, KC_MPRV, KC_VOLD, KC_VOLU, KC_MNXT, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, _______,       _______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
                     _______, _______, _______, KC_MPLY, XXXXXXX,       XXXXXXX, _______, _______, _______, _______
   )
 };
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    state = update_tri_layer_state(state, _RAISE, _LOWER, _ADJUST);
+    return state;
+}
 
 #ifdef OLED_ENABLE
 
@@ -170,33 +165,7 @@ bool oled_task_user(void) {
 #endif
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-        case KC_LOWER:
-            if (record->event.pressed) {
-                layer_on(_LOWER);
-                update_tri_layer(_LOWER, _RAISE, _ADJUST);
-            } else {
-                layer_off(_LOWER);
-                update_tri_layer(_LOWER, _RAISE, _ADJUST);
-            }
-            return false;
-        case KC_RAISE:
-            if (record->event.pressed) {
-                layer_on(_RAISE);
-                update_tri_layer(_LOWER, _RAISE, _ADJUST);
-            } else {
-                layer_off(_RAISE);
-                update_tri_layer(_LOWER, _RAISE, _ADJUST);
-            }
-            return false;
-        case KC_ADJUST:
-            if (record->event.pressed) {
-                layer_on(_ADJUST);
-            } else {
-                layer_off(_ADJUST);
-            }
-            return false;
-    }
+
     return true;
 }
 
